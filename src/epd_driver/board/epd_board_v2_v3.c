@@ -1,3 +1,5 @@
+#ifdef CONFIG_EPD_BOARD_REVISION_V2_V3
+
 #include "epd_board.h"
 
 #include "epd_board_common.h"
@@ -158,3 +160,5 @@ const EpdBoardDefinition epd_board_v2_v3 = {
   .temperature_init = epd_board_temperature_init_v2,
   .ambient_temperature = epd_board_ambient_temperature_v2,
 };
+
+#endif

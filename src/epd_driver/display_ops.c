@@ -70,8 +70,12 @@ void epd_deinit() {
 }
 
 void epd_start_frame() {
+  #ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
   while (i2s_is_busy() || rmt_busy()) {
   };
+  #else
+  while(i2s_is_busy());
+  #endif
 
   epd_ctrl_state_t mask = NoChangeState;
 
@@ -115,8 +119,12 @@ void IRAM_ATTR epd_skip() {
 }
 
 void IRAM_ATTR epd_output_row(uint32_t output_time_dus) {
+  #ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
   while (i2s_is_busy() || rmt_busy()) {
   };
+  #else
+  while(i2s_is_busy());
+  #endif
 
   epd_ctrl_state_t mask = NoChangeState;
   ctrl_state.ep_sth = true;

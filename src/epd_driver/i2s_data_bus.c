@@ -21,6 +21,10 @@
 #include "driver/periph_ctrl.h"
 #endif
 
+#ifdef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
+#include "esp_lcd_panel_io.h"
+#endif
+
 /// DMA descriptors for front and back line buffer.
 /// We use two buffers, so one can be filled while the other
 /// is transmitted.
@@ -46,6 +50,11 @@ static volatile bool output_done = true;
 /// The start pulse pin extracted from the configuration for use in the "done"
 /// interrupt.
 static gpio_num_t start_pulse_pin;
+
+#ifdef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
+static uint8_t buffer[(960 + 32) / 4] = { 0 };
+static esp_lcd_panel_io_handle_t io_handle = NULL;
+#endif
 
 /// Initializes a DMA descriptor.
 static void fill_dma_desc(volatile lldesc_t *dmadesc, uint8_t *buf,
@@ -86,6 +95,7 @@ static void gpio_setup_out(int gpio, int sig, bool invert) {
 }
 
 /// Resets "Start Pulse" signal when the current row output is done.
+#ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
 static void IRAM_ATTR i2s_int_hdl(void *arg) {
   i2s_dev_t *dev = &I2S1;
   if (dev->int_st.out_done) {
@@ -96,16 +106,30 @@ static void IRAM_ATTR i2s_int_hdl(void *arg) {
   // Clear the interrupt. Otherwise, the whole device would hang.
   dev->int_clr.val = dev->int_raw.val;
 }
+#endif
 
+#ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
 volatile uint8_t IRAM_ATTR *i2s_get_current_buffer() {
   return (volatile uint8_t*) (current_buffer ? i2s_state.dma_desc_a->buf : i2s_state.dma_desc_b->buf);
 }
+#else
+volatile uint8_t IRAM_ATTR *i2s_get_current_buffer() {
+  return buffer;
+}
+#endif
 
+#ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
 bool IRAM_ATTR i2s_is_busy() {
   // DMA and FIFO must be done
   return !output_done || !I2S1.state.tx_idle;
 }
+#else
+bool IRAM_ATTR i2s_is_busy() {
+  return !output_done;
+}
+#endif
 
+#ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
 void IRAM_ATTR i2s_switch_buffer() {
   // either device is done transmitting or the switch must be away from the
   // buffer currently used by the DMA engine.
@@ -113,7 +137,11 @@ void IRAM_ATTR i2s_switch_buffer() {
   };
   current_buffer = !current_buffer;
 }
+#else
+void IRAM_ATTR i2s_switch_buffer() {}
+#endif
 
+#ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
 void IRAM_ATTR i2s_start_line_output() {
   output_done = false;
 
@@ -133,7 +161,21 @@ void IRAM_ATTR i2s_start_line_output() {
   gpio_set_level(start_pulse_pin, 0);
   dev->conf.tx_start = 1;
 }
+#else
+void IRAM_ATTR i2s_start_line_output() {
+  output_done = false;
+  esp_lcd_panel_io_tx_color(io_handle, 0, buffer, (960 + 32) / 4);
+}
+#endif
 
+#ifdef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
+static bool notify_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx) {
+  output_done = true;
+  return output_done;
+}
+#endif
+
+#ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
 void i2s_gpio_attach(i2s_bus_config *cfg) {
   gpio_num_t I2S_GPIO_BUS[] = {cfg->data_6, cfg->data_7, cfg->data_4,
                                cfg->data_5, cfg->data_2, cfg->data_3,
@@ -155,6 +197,7 @@ void i2s_gpio_attach(i2s_bus_config *cfg) {
   // Invert word select signal
   gpio_setup_out(cfg->clock, I2S1O_WS_OUT_IDX, true);
 }
+#endif
 
 void i2s_gpio_detach(i2s_bus_config *cfg) {
   gpio_set_direction(cfg->data_0, GPIO_MODE_INPUT);
@@ -176,6 +219,7 @@ void i2s_gpio_detach(i2s_bus_config *cfg) {
   rtc_gpio_isolate(GPIO_NUM_12);
 }
 
+#ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
 void i2s_bus_init(i2s_bus_config *cfg, uint32_t epd_row_width) {
   i2s_gpio_attach(cfg);
 
@@ -294,6 +338,45 @@ void i2s_bus_init(i2s_bus_config *cfg, uint32_t epd_row_width) {
 
   dev->conf.tx_start = 0;
 }
+#else
+void i2s_bus_init(i2s_bus_config *cfg, uint32_t epd_row_width) {
+  esp_lcd_i80_bus_handle_t i80_bus = NULL;
+  esp_lcd_i80_bus_config_t bus_config = {
+    .dc_gpio_num = cfg->start_pulse,
+    .wr_gpio_num = cfg->clock,
+    .data_gpio_nums = {
+      cfg->data_6,
+      cfg->data_7,
+      cfg->data_4,
+      cfg->data_5,
+      cfg->data_2,
+      cfg->data_3,
+      cfg->data_0,
+      cfg->data_1,
+    },
+    .bus_width = 8,
+    .max_transfer_bytes = (epd_row_width + 32)/4
+  };
+  ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
+
+  esp_lcd_panel_io_i80_config_t io_config = {
+    .cs_gpio_num = -1,
+    .pclk_hz = 10 * 1000 * 1000,
+    .trans_queue_depth = 10,
+    .dc_levels = {
+      .dc_idle_level = 0,
+      .dc_cmd_level = 1,
+      .dc_dummy_level = 0,
+      .dc_data_level = 0,
+    },
+    .on_color_trans_done = notify_trans_done,
+    .user_ctx = NULL,
+    .lcd_cmd_bits = 10,
+    .lcd_param_bits = 0
+  };
+  ESP_ERROR_CHECK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
+}
+#endif
 
 void i2s_deinit() {
   esp_intr_free(gI2S_intr_handle);

@@ -1,3 +1,5 @@
+#ifdef CONFIG_EPD_BOARD_REVISION_V6
+
 #include "epd_board.h"
 #include "../include/board/epd_board_v6.h"
 
@@ -300,3 +302,5 @@ const EpdBoardDefinition epd_board_v6 = {
   .temperature_init = NULL,
   .ambient_temperature = epd_board_ambient_temperature,
 };
+
+#endif

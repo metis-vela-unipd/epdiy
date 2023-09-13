@@ -1,4 +1,4 @@
-#ifdef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47
+#ifdef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
 
 #include "epd_board.h"
 
@@ -6,26 +6,26 @@
 #include "../i2s_data_bus.h"
 #include "../rmt_pulse.h"
 
-#define CFG_DATA GPIO_NUM_23
-#define CFG_CLK GPIO_NUM_18
+#define CFG_DATA GPIO_NUM_13
+#define CFG_CLK GPIO_NUM_12
 #define CFG_STR GPIO_NUM_0
-#define D7 GPIO_NUM_22
-#define D6 GPIO_NUM_21
-#define D5 GPIO_NUM_27
-#define D4 GPIO_NUM_2
-#define D3 GPIO_NUM_19
-#define D2 GPIO_NUM_4
-#define D1 GPIO_NUM_32
-#define D0 GPIO_NUM_33
+#define D7 GPIO_NUM_7
+#define D6 GPIO_NUM_6
+#define D5 GPIO_NUM_5
+#define D4 GPIO_NUM_4
+#define D3 GPIO_NUM_3
+#define D2 GPIO_NUM_2
+#define D1 GPIO_NUM_1
+#define D0 GPIO_NUM_8
 
 /* Control Lines */
-#define CKV GPIO_NUM_25
-#define STH GPIO_NUM_26
+#define CKV GPIO_NUM_38
+#define STH GPIO_NUM_40
 
 #define V4_LATCH_ENABLE GPIO_NUM_15
 
 /* Edges */
-#define CKH GPIO_NUM_5
+#define CKH GPIO_NUM_41
 
 typedef struct {
   bool power_disable : 1;
@@ -103,8 +103,6 @@ static void epd_board_set_ctrl(epd_ctrl_state_t *state, const epd_ctrl_state_t *
 }
 
 static void epd_board_poweron(epd_ctrl_state_t *state) {
-  i2s_gpio_attach(&i2s_config);
-
   // This was re-purposed as power enable.
   config_reg.ep_scan_direction = true;
 
@@ -197,7 +195,7 @@ static void epd_board_poweroff_touch(epd_ctrl_state_t *state) {
   epd_board_poweroff_common(state);
 }
 
-const EpdBoardDefinition epd_board_lilygo_t5_47 = {
+const EpdBoardDefinition epd_board_lilygo_t5_47_plus = {
   .init = epd_board_init,
   .deinit = NULL,
   .set_ctrl = epd_board_set_ctrl,
@@ -208,7 +206,7 @@ const EpdBoardDefinition epd_board_lilygo_t5_47 = {
   .ambient_temperature = NULL,
 };
 
-const EpdBoardDefinition epd_board_lilygo_t5_47_touch = {
+const EpdBoardDefinition epd_board_lilygo_t5_47_plus_touch = {
   .init = epd_board_init,
   .deinit = NULL,
   .set_ctrl = epd_board_set_ctrl,
