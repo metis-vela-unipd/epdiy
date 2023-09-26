@@ -111,6 +111,8 @@ void epd_control_reg_init();
 void epd_control_reg_deinit();
 
 // Built in board definitions
+extern const EpdBoardDefinition epd_board_lilygo_t5_47_plus;
+extern const EpdBoardDefinition epd_board_lilygo_t5_47_plus_touch;
 extern const EpdBoardDefinition epd_board_lilygo_t5_47;
 extern const EpdBoardDefinition epd_board_lilygo_t5_47_touch;
 extern const EpdBoardDefinition epd_board_v2_v3;
