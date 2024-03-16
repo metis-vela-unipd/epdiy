@@ -234,10 +234,10 @@ void epd_clear_area_cycles(EpdRect area, int cycles, int cycle_time) {
 
 
 void epd_init(enum EpdInitOptions options) {
-#if defined(CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS)
-  epd_set_board(&epd_board_lilygo_t5_47_plus);
-#elif defined(CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47)
+#if defined(CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47)
   epd_set_board(&epd_board_lilygo_t5_47);
+#elif defined(CONFIG_EPD_BOARD_REVISION_LILYGO_S3_47)
+  epd_set_board(&epd_board_lilygo_s3_47);
 #elif defined(CONFIG_EPD_BOARD_REVISION_V2_V3)
   epd_set_board(&epd_board_v2_v3);
 #elif defined(CONFIG_EPD_BOARD_REVISION_V4)

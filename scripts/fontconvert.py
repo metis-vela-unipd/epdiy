@@ -296,4 +296,3 @@ for i_start, i_end in intervals:
     print (f"    ( {i_start}, {i_end}), ie. '{chr(i_start)}' -  '{chr(i_end)}'", file=sys.stderr)
 print("") 
 print("*/") 
-

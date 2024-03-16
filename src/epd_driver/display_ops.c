@@ -1,12 +1,17 @@
 #include "display_ops.h"
 #include "esp_timer.h"
 #include "esp_log.h"
-#include "i2s_data_bus.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+  #include "i2s_data_bus.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+  #include "i2s_data_bus_s3.h"
+#endif
+
 #include "rmt_pulse.h"
 #include "epd_board.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
 #include "xtensa/core-macros.h"
 
 static epd_ctrl_state_t ctrl_state;
@@ -70,13 +75,11 @@ void epd_deinit() {
 }
 
 void epd_start_frame() {
-  #ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
-  while (i2s_is_busy() || rmt_busy()) {
-  };
-  #else
-  while(i2s_is_busy());
+  #if CONFIG_IDF_TARGET_ESP32
+  while (i2s_is_busy() || rmt_busy()) {};
+  #elif CONFIG_IDF_TARGET_ESP32S3
+  while (i2s_is_busy()) ;
   #endif
-
   epd_ctrl_state_t mask = NoChangeState;
 
   ctrl_state.ep_mode = true;
@@ -119,11 +122,10 @@ void IRAM_ATTR epd_skip() {
 }
 
 void IRAM_ATTR epd_output_row(uint32_t output_time_dus) {
-  #ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
-  while (i2s_is_busy() || rmt_busy()) {
-  };
-  #else
-  while(i2s_is_busy());
+  #if CONFIG_IDF_TARGET_ESP32
+  while (i2s_is_busy() || rmt_busy()) {};
+  #elif CONFIG_IDF_TARGET_ESP32S3
+  while (i2s_is_busy()) ;
   #endif
 
   epd_ctrl_state_t mask = NoChangeState;

@@ -73,8 +73,15 @@ void IRAM_ATTR write_row(uint32_t output_time_dus) {
 
 // skip a display row
 void IRAM_ATTR skip_row(uint8_t pipeline_finish_time) {
+  if (skipping == 0)
+    {
+        epd_switch_buffer();
+        memset(epd_get_current_buffer(), 0, EPD_LINE_BYTES);
+        epd_switch_buffer();
+        memset(epd_get_current_buffer(), 0, EPD_LINE_BYTES);
+        epd_output_row(pipeline_finish_time);
   // output previously loaded row, fill buffer with no-ops.
-  if (skipping < 2) {
+  } else if (skipping < 2) {
     memset(epd_get_current_buffer(), 0x00, EPD_LINE_BYTES);
     epd_output_row(pipeline_finish_time);
   } else {
@@ -143,12 +150,14 @@ calc_epd_input_4bpp_lut_64k(const uint32_t *line_data, uint8_t *epd_input,
     uint16_t v2 = *(line_data_16++);
     uint16_t v3 = *(line_data_16++);
     uint16_t v4 = *(line_data_16++);
-    #ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_T5_47_PLUS
-    uint32_t pixel = conversion_lut[v1] << 16 | conversion_lut[v2] << 24 |
-                     conversion_lut[v3] | conversion_lut[v4] << 8;
+    #ifdef CONFIG_EPD_BOARD_REVISION_LILYGO_S3_47
+      uint32_t pixel = (conversion_lut[v1]) << 0  |
+                         (conversion_lut[v2]) << 8  |
+                         (conversion_lut[v3]) << 16 |
+                         (conversion_lut[v4]) << 24;
     #else
-    uint32_t pixel = conversion_lut[v1] << 0 | conversion_lut[v2] << 8 |
-                     conversion_lut[v3] << 16 | conversion_lut[v4] << 24;
+      uint32_t pixel = conversion_lut[v1] << 16 | conversion_lut[v2] << 24 |
+                     conversion_lut[v3] | conversion_lut[v4] << 8;
     #endif
     wide_epd_input[j] = pixel;
   }

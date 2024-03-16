@@ -8,6 +8,7 @@
 #include <string.h>
 #include <esp_heap_caps.h>
 #include <esp_log.h>
+#include <esp_timer.h>
 
 #ifndef _swap_int
 #define _swap_int(a, b)                                                        \
@@ -26,7 +27,7 @@ EpdiyHighlevelState epd_hl_init(const EpdWaveform* waveform) {
   assert(!already_initialized);
   assert(waveform != NULL);
 
-  #ifndef CONFIG_ESP32_SPIRAM_SUPPORT
+  #if defined(CONFIG_ESP32_SPIRAM_SUPPORT) == false && defined(CONFIG_ESP32S3_SPIRAM_SUPPORT) == false
     ESP_LOGW("EPDiy", "Please enable PSRAM for the ESP32 (menuconfig→ Component config→ ESP32-specific)");
   #endif
   EpdiyHighlevelState state;
@@ -54,7 +55,10 @@ uint8_t* epd_hl_get_framebuffer(EpdiyHighlevelState* state) {
 }
 
 enum EpdDrawError epd_hl_update_screen(EpdiyHighlevelState* state, enum EpdDrawMode mode, int temperature) {
-  return epd_hl_update_area(state, mode, temperature, epd_full_screen());
+  uint64_t startTime = esp_timer_get_time();
+  enum EpdDrawError ok = epd_hl_update_area(state, mode, temperature, epd_full_screen());
+  printf("update_screen() %llu ms\n", (esp_timer_get_time()-startTime)/1000);
+  return ok;
 }
 
 EpdRect _inverse_rotated_area(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
@@ -131,6 +135,8 @@ enum EpdDrawError epd_hl_update_area(EpdiyHighlevelState* state, enum EpdDrawMod
       err = epd_draw_base(epd_full_screen(), state->difference_fb, diff_area, MODE_PACKING_1PPB_DIFFERENCE | mode, temperature, state->dirty_lines, state->waveform);
   }
 
+  // Skip this for Lilygo S3 since it's not using 2 buffers
+  #ifndef CONFIG_EPD_BOARD_REVISION_LILYGO_S3_47
   for (int l=diff_area.y; l < diff_area.y + diff_area.height; l++) {
 	if (state->dirty_lines[l] > 0) {
       uint8_t* lfb = state->front_fb + EPD_WIDTH / 2 * l;
@@ -145,6 +151,8 @@ enum EpdDrawError epd_hl_update_area(EpdiyHighlevelState* state, enum EpdDrawMod
       }
 	}
   }
+  #endif
+
   return err;
 }
 

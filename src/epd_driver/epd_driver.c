@@ -367,7 +367,7 @@ void epd_copy_to_framebuffer(EpdRect image_area, const uint8_t *image_data,
   }
 }
 
-enum EpdDrawError epd_draw_image(EpdRect area, const uint8_t *data, const EpdWaveform *waveform) {
+enum EpdDrawError IRAM_ATTR epd_draw_image(EpdRect area, const uint8_t *data, const EpdWaveform *waveform) {
     int temperature = epd_ambient_temperature();
 	assert(waveform != NULL);
     EpdRect no_crop = {
